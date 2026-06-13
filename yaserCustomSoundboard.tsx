@@ -9,7 +9,7 @@ const SoundboardStore = findStoreLazy("SoundboardStore") as any;
 const GuildStore = findStoreLazy("GuildStore") as any;
 const UserStore = findStoreLazy("UserStore") as any;
 
-const CURRENT_VERSION = "0.9.0";
+const CURRENT_VERSION = "1.1.0";
 
 const settings = definePluginSettings({
     previewDeviceId: {
@@ -44,6 +44,8 @@ function makeRange(min: number, max: number, step: number) {
 // Reuse device selector logic
 function DeviceSelector() {
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+    const [hoveredPreview, setHoveredPreview] = useState(false);
+    const [hoveredMic, setHoveredMic] = useState(false);
     
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(devs => {
@@ -51,38 +53,93 @@ function DeviceSelector() {
         });
     }, []);
 
+    const selectStyle = (isHovered: boolean) => ({
+        width: "100%", 
+        padding: "12px 14px", 
+        borderRadius: "8px", 
+        background: isHovered ? "#1e1f22" : "#2b2d31", 
+        color: "#dbdee1", 
+        border: `1px solid ${isHovered ? "#5865F2" : "transparent"}`,
+        outline: "none",
+        fontSize: "14px",
+        fontWeight: "500",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
+        appearance: "none",
+        boxShadow: isHovered ? "0 0 0 1px #5865F2" : "none"
+    });
+
+    const labelStyle = {
+        color: "#f2f3f5", 
+        margin: "0 0 8px 0", 
+        fontSize: "15px", 
+        fontWeight: "600",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px"
+    };
+
+    const containerStyle = {
+        padding: "20px", 
+        background: "#1e1f22", 
+        borderRadius: "12px", 
+        marginTop: "16px",
+        border: "1px solid rgba(255,255,255,0.05)",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.2)"
+    };
+
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "16px", background: "rgba(0,0,0,0.2)", borderRadius: "8px", marginTop: "10px" }}>
-            <div>
-                <h4 style={{ color: "#fff", margin: "0 0 8px 0" }}>1. Headset Device (For Previewing Sounds)</h4>
-                <select 
-                    value={settings.store.previewDeviceId || "default"}
-                    onChange={e => settings.store.previewDeviceId = e.target.value}
-                    style={{ width: "100%", padding: "8px", borderRadius: "4px", background: "#202225", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }}
-                >
-                    <option value="default">Default</option>
-                    {devices.map(d => (
-                        <option key={d.deviceId} value={d.deviceId}>{d.label || d.deviceId}</option>
-                    ))}
-                </select>
-                <div style={{ fontSize: "12px", color: "#949BA4", marginTop: "6px" }}>Select your personal headset. This is used when you click the Preview (Speaker) icon so only you hear it.</div>
+        <div style={containerStyle}>
+            <div style={{ marginBottom: "24px" }} onMouseEnter={() => setHoveredPreview(true)} onMouseLeave={() => setHoveredPreview(false)}>
+                <h4 style={labelStyle}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#5865F2" }}>
+                        <path d="M12 2C6.48 2 2 6.48 2 12v6a2 2 0 0 0 2 2h3v-8H4v-2a8 8 0 1 1 16 0v2h-3v8h3a2 2 0 0 0 2-2v-6c0-5.52-4.48-10-10-10zm-5 12v4H4v-4h3zm13 4h-3v-4h3v4z"/>
+                    </svg>
+                    1. Headset Device (Preview Sounds)
+                </h4>
+                <div style={{ position: "relative" }}>
+                    <select 
+                        value={settings.store.previewDeviceId || "default"}
+                        onChange={e => settings.store.previewDeviceId = e.target.value}
+                        style={selectStyle(hoveredPreview)}
+                    >
+                        <option value="default">Default System Device</option>
+                        {devices.map(d => (
+                            <option key={d.deviceId} value={d.deviceId}>{d.label || "Unknown Device (" + d.deviceId.slice(0,8) + ")"}</option>
+                        ))}
+                    </select>
+                    <div style={{ position: "absolute", right: "12px", top: "14px", pointerEvents: "none", color: "#b5bac1" }}>▼</div>
+                </div>
+                <div style={{ fontSize: "12px", color: "#949ba4", marginTop: "8px", paddingLeft: "4px" }}>
+                    Select your personal headset. You will hear the sound here before playing it to others.
+                </div>
             </div>
 
-            <div style={{ width: "100%", height: "1px", background: "rgba(255,255,255,0.05)" }} />
+            <div style={{ width: "100%", height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "24px" }} />
 
-            <div>
-                <h4 style={{ color: "#fff", margin: "0 0 8px 0" }}>2. Mic Cable Device (For Playing to Room)</h4>
-                <select 
-                    value={settings.store.micDeviceId || "default"}
-                    onChange={e => settings.store.micDeviceId = e.target.value}
-                    style={{ width: "100%", padding: "8px", borderRadius: "4px", background: "#202225", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }}
-                >
-                    <option value="default">Default</option>
-                    {devices.map(d => (
-                        <option key={d.deviceId} value={d.deviceId}>{d.label || d.deviceId}</option>
-                    ))}
-                </select>
-                <div style={{ fontSize: "12px", color: "#949BA4", marginTop: "6px" }}>Select your Virtual Audio Cable (e.g., SteelSeries Sonar Mic). This is used when you click the Play button to broadcast to the room.</div>
+            <div onMouseEnter={() => setHoveredMic(true)} onMouseLeave={() => setHoveredMic(false)}>
+                <h4 style={labelStyle}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#ed4245" }}>
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                    2. Mic Cable Device (Broadcast to Room)
+                </h4>
+                <div style={{ position: "relative" }}>
+                    <select 
+                        value={settings.store.micDeviceId || "default"}
+                        onChange={e => settings.store.micDeviceId = e.target.value}
+                        style={selectStyle(hoveredMic)}
+                    >
+                        <option value="default">Default System Device</option>
+                        {devices.map(d => (
+                            <option key={d.deviceId} value={d.deviceId}>{d.label || "Unknown Device (" + d.deviceId.slice(0,8) + ")"}</option>
+                        ))}
+                    </select>
+                    <div style={{ position: "absolute", right: "12px", top: "14px", pointerEvents: "none", color: "#b5bac1" }}>▼</div>
+                </div>
+                <div style={{ fontSize: "12px", color: "#949ba4", marginTop: "8px", paddingLeft: "4px" }}>
+                    Select your Virtual Audio Cable (e.g., SteelSeries Sonar Mic). Sounds will be routed here to broadcast.
+                </div>
             </div>
         </div>
     );

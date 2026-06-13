@@ -1,6 +1,7 @@
 {
   "CustomSoundboard": {
-    "version": "1.0.0",
+    "version": "1.1.0",
+    "filename": "yaserCustomSoundboard.tsx",
     "changelog": "- الإصدار الأول من الساوند بورد الخاص!\n- تم إضافة نظام التحديثات التلقائي"
   }
 }
